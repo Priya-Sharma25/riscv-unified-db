@@ -391,6 +391,56 @@ The following <%= csr_list.size %> CSRs are affected by this extension.
 
 <%- end # unless all_csrs.empty? -%>
 
+<%- Udb.logger.info "Determining relevant MMRs" -%>
+<%- all_mmrs = ext_reqs.map { |ext_req| ext_req.respond_to?(:mmrs) ? ext_req.mmrs : [] }.flatten.uniq -%>
+<%- Udb.logger.info "Found #{all_mmrs.size} relevant MMRs" -%>
+<%- unless all_mmrs.empty? -%>
+
+[.portrait]
+<<<
+== MMR summary
+
+<%-   ext_reqs.each do |ext_req| -%>
+<%-     mmr_list = ext_req.respond_to?(:mmrs) ? ext_req.mmrs : [] -%>
+<%-     unless mmr_list.empty? -%>
+<%-       unless ext_reqs.size == 1 -%>
+=== <%= ext_req.name %>
+<%-       end -%>
+
+<%- Udb.logger.info "Creating MMR summary for #{ext_req}" -%>
+
+The following <%= mmr_list.size %> memory-mapped register(s) are affected by this extension.
+
+[%autowidth]
+|===
+| MMR | Name | Physical Address <%- if ext_req.satisfying_versions.size > 1 -%>| <%= ext_req.satisfying_versions.map { |v| "v#{v.version}" }.join(" | ") %><%- end -%>
+
+<%-       mmr_list.each do |mmr| -%>
+| xref:mmrs-<%= mmr.name.gsub('.', '_') %>[<%= mmr.name %>]
+| <%= mmr.long_name %>
+| <%= "0x#{mmr.physical_address.to_s(16).upcase}" %>
+<%-         if ext_req.satisfying_versions.size > 1 -%>
+| <%= ext_req.satisfying_versions.map { |v| mmr.affected_by?(v) ? "&#x2713;" : "" }.join(" | ") %>
+<%-         end -%>
+<%-       end -%>
+
+|===
+<%-     end -%>
+<%-   end -%>
+
+<<<
+[#mmrs,reftext="MMRs (in alphabetical order)"]
+== MMRs (in alphabetical order)
+
+<%-   all_mmrs.each do |mmr| -%>
+<<<
+:leveloffset: +2
+<%= partial "common/mmr.adoc.erb", { mmr:, cfg_arch: } %>
+:leveloffset: -2
+<%-   end -%>
+
+<%- end # unless all_mmrs.empty? -%>
+
 <%- unless all_instructions.empty? -%>
 [.portrait]
 <<<
