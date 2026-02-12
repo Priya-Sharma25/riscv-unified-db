@@ -1,0 +1,19 @@
+name: autofix.ci  # needed to securely identify the workflow
+
+on:
+  pull_request:
+  push:
+    branches: [ "main" ]
+permissions:
+  contents: read
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone Github Repo Action
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - run: ./bin/chore gen all
+
+      - uses: autofix-ci/action@7a166d7532b277f34e16238930461bf77f9d7ed8
