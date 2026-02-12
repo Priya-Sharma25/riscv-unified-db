@@ -2,8 +2,6 @@
 # DO NOT EDIT
 # Instead, edit `tools/test/regress-tests.yaml` (preferred) or `tools/test/regress-gh-template.yaml`
 
-
-
 ---
 name: Regression test
 permissions:
