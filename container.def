@@ -5,6 +5,8 @@ Bootstrap: docker
 From: ubuntu:24.04
 Stage: spython-base
 
+
+
 %files
 .ruby-version /opt/.ruby-version
 requirements.txt /opt/requirements.txt
