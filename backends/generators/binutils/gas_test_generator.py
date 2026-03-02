@@ -63,18 +63,14 @@ def calculate_location_width(location) -> int:
                 a, b = map(int, part.split("-"))
                 total_width += abs(a - b) + 1
             except ValueError:
-                logging.debug(
-                    f"Could not parse bit range '{part}' in location '{location_str}'"
-                )
+                logging.debug(f"Could not parse bit range '{part}' in location '{location_str}'")
                 continue
         else:
             try:
                 int(part)
                 total_width += 1
             except ValueError:
-                logging.debug(
-                    f"Could not parse bit '{part}' in location '{location_str}'"
-                )
+                logging.debug(f"Could not parse bit '{part}' in location '{location_str}'")
                 continue
 
     return total_width
@@ -117,9 +113,7 @@ def extract_instruction_constraints(name: str, data: dict) -> dict:
             # Calculate the logical immediate range
             # Determine if signed or unsigned immediate
             is_signed = (
-                sign_extend
-                or var_name.startswith("simm")
-                or (width == 12 and var_name == "imm")
+                sign_extend or var_name.startswith("simm") or (width == 12 and var_name == "imm")
             )  # I-type pattern
 
             if is_signed:
@@ -376,9 +370,7 @@ class AssemblyExampleGenerator:
 
         self._load_operand_definitions()
         self._load_csr_examples()
-        self.all_instruction_data, self.instruction_constraints = (
-            self._load_all_instruction_data()
-        )
+        self.all_instruction_data, self.instruction_constraints = self._load_all_instruction_data()
         self.extension_classification = self._classify_extensions()
 
     def _load_operand_definitions(self):
@@ -386,9 +378,7 @@ class AssemblyExampleGenerator:
 
         abi_regs = RISCV_ABI_REGISTERS
 
-        self.gpr_examples = (
-            abi_regs["gpr"]["arg_ret"][:4] + abi_regs["gpr"]["saved"][:4]
-        )
+        self.gpr_examples = abi_regs["gpr"]["arg_ret"][:4] + abi_regs["gpr"]["saved"][:4]
 
         # Compressed instruction register set per RISC-V spec
         # 3-bit register fields (rs1', rs2', rd') encode registers x8-x15
@@ -536,9 +526,7 @@ class AssemblyExampleGenerator:
         i = variant_index
 
         constraints = self._get_instruction_constraints(inst_name)
-        if constraints.get("uses_compressed_regs") or constraints.get(
-            "limited_registers"
-        ):
+        if constraints.get("uses_compressed_regs") or constraints.get("limited_registers"):
             reg_examples = self.compressed_gpr_examples
         else:
             reg_examples = self.gpr_examples
@@ -569,14 +557,10 @@ class AssemblyExampleGenerator:
             "csr": self.csr_examples[i % len(self.csr_examples)],
             # Immediate patterns
             "imm": str(
-                self._get_safe_immediate(
-                    inst_name, self._get_instruction_constraints(inst_name)
-                )
+                self._get_safe_immediate(inst_name, self._get_instruction_constraints(inst_name))
             ),
             "simm": str(
-                self._get_safe_immediate(
-                    inst_name, self._get_instruction_constraints(inst_name)
-                )
+                self._get_safe_immediate(inst_name, self._get_instruction_constraints(inst_name))
             ),
             "zimm": str(
                 abs(
@@ -649,9 +633,7 @@ class AssemblyExampleGenerator:
 
         examples = []
 
-        if "," in assembly or any(
-            reg in assembly for reg in ["rd", "rs1", "rs2", "imm"]
-        ):
+        if "," in assembly or any(reg in assembly for reg in ["rd", "rs1", "rs2", "imm"]):
             examples.extend(self._generate_variants(name, assembly))
         else:
             variants = self._generate_variants(name, assembly)
@@ -675,9 +657,7 @@ class AssemblyExampleGenerator:
         if not assembly or not assembly.strip():
             return []
 
-        reg_set = (
-            self.compressed_gpr_examples if name.startswith("c.") else self.gpr_examples
-        )
+        reg_set = self.compressed_gpr_examples if name.startswith("c.") else self.gpr_examples
 
         for i in range(min(3, len(reg_set) - 1)):
             example = f"{name}\t{assembly}"
@@ -698,9 +678,7 @@ class AssemblyExampleGenerator:
                     "succ",
                 ]:
                     if operand_raw == "pred":
-                        replacements["pred"] = self.fence_examples[
-                            i % len(self.fence_examples)
-                        ]
+                        replacements["pred"] = self.fence_examples[i % len(self.fence_examples)]
                     elif operand_raw == "succ":
                         replacements["succ"] = self.fence_examples[
                             (i + 1) % len(self.fence_examples)
@@ -711,10 +689,7 @@ class AssemblyExampleGenerator:
             for placeholder, value in replacements.items():
                 operand_found = any(
                     op.get("raw") == placeholder
-                    or (
-                        op.get("type") in ["csr", "vector_mask"]
-                        and placeholder in ["csr", "vm"]
-                    )
+                    or (op.get("type") in ["csr", "vector_mask"] and placeholder in ["csr", "vm"])
                     for op in operands
                 )
 
@@ -956,9 +931,7 @@ class GasTestGenerator:
             else:
                 filtered_instructions[name] = data
 
-        logging.info(
-            f"Filtered to {len(filtered_instructions)} instructions from precomputed data"
-        )
+        logging.info(f"Filtered to {len(filtered_instructions)} instructions from precomputed data")
         return filtered_instructions
 
     def group_instructions_by_extension(
@@ -1002,18 +975,14 @@ class GasTestGenerator:
                 elif isinstance(first_item, dict) and "allOf" in first_item:
                     all_of_list = first_item["allOf"]
                     if all_of_list and len(all_of_list) > 0:
-                        extensions = [
-                            ext.lower() for ext in all_of_list if isinstance(ext, str)
-                        ]
+                        extensions = [ext.lower() for ext in all_of_list if isinstance(ext, str)]
                         return "-".join(extensions) if extensions else "unknown"
                 return sanitize_extension_name(str(first_item))
 
         elif "allOf" in defined_by:
             all_of_list = defined_by["allOf"]
             if all_of_list and len(all_of_list) > 0:
-                extensions = [
-                    ext.lower() for ext in all_of_list if isinstance(ext, str)
-                ]
+                extensions = [ext.lower() for ext in all_of_list if isinstance(ext, str)]
                 return "-".join(extensions) if extensions else "unknown"
 
         elif "oneOf" in defined_by:
@@ -1073,16 +1042,12 @@ class GasTestGenerator:
             for _name, assembly, example in instruction_examples:
                 mnemonic, _ = self._split_example_line(example)
                 signature = assembly.strip() if assembly else "n/a"
-                f.write(
-                    f"\t# Auto-generated pass test for `{mnemonic}` (assembly: {signature})\n"
-                )
+                f.write(f"\t# Auto-generated pass test for `{mnemonic}` (assembly: {signature})\n")
                 f.write("\t# This source should assemble successfully.\n")
                 f.write(f"\t{example}\n\n")
 
         base_arch = "rv32i"
-        march = self._build_march_string(
-            base_arch, group.extension, group.required_extensions
-        )
+        march = self._build_march_string(base_arch, group.extension, group.required_extensions)
 
         with open(dump_file, "w") as f:
             f.write(f"#as: -march={march}\n")
@@ -1102,9 +1067,7 @@ class GasTestGenerator:
                 f.write(f"{pattern}\n")
                 addr += self._get_instruction_size(name)
 
-    def _generate_arch_specific_tests(
-        self, group: TestInstructionGroup, arch: str
-    ) -> None:
+    def _generate_arch_specific_tests(self, group: TestInstructionGroup, arch: str) -> None:
         """Generate architecture-specific test files."""
         ext_name = self._get_binutils_filename(group.extension)
 
@@ -1130,18 +1093,12 @@ class GasTestGenerator:
             for _name, assembly, example in instruction_examples:
                 mnemonic, _ = self._split_example_line(example)
                 signature = assembly.strip() if assembly else "n/a"
-                f.write(
-                    f"\t# Auto-generated pass test for `{mnemonic}` (assembly: {signature})\n"
-                )
-                f.write(
-                    f"\t# This source should assemble successfully on {arch.upper()}.\n"
-                )
+                f.write(f"\t# Auto-generated pass test for `{mnemonic}` (assembly: {signature})\n")
+                f.write(f"\t# This source should assemble successfully on {arch.upper()}.\n")
                 f.write(f"\t{example}\n\n")
 
         base_arch = f"{arch}i"
-        march = self._build_march_string(
-            base_arch, group.extension, group.required_extensions
-        )
+        march = self._build_march_string(base_arch, group.extension, group.required_extensions)
 
         with open(dump_file, "w") as f:
             f.write(f"#as: -march={march}\n")
@@ -1185,12 +1142,8 @@ class GasTestGenerator:
 
                 mnemonic = entry.get("display_instruction", name)
                 signature = entry.get("assembly") or "n/a"
-                f.write(
-                    f"\t# Auto-generated FAIL tests for `{mnemonic}` (assembly: {signature})\n"
-                )
-                f.write(
-                    "\t# Each line below is intended to fail assembly for a distinct reason.\n"
-                )
+                f.write(f"\t# Auto-generated FAIL tests for `{mnemonic}` (assembly: {signature})\n")
+                f.write("\t# Each line below is intended to fail assembly for a distinct reason.\n")
 
                 for case in entry["cases"]:
                     reason = case.get("reason") or "generated error case"
@@ -1200,9 +1153,7 @@ class GasTestGenerator:
                 f.write("\n")
 
         with open(dump_file, "w") as f:
-            march = self._build_march_string(
-                "rv32i", group.extension, group.required_extensions
-            )
+            march = self._build_march_string("rv32i", group.extension, group.required_extensions)
             f.write(f"#as: -march={march}\n")
             f.write(f"#source: {source_file.name}\n")
             f.write(f"#error_output: {error_file.name}\n")
@@ -1239,9 +1190,7 @@ class GasTestGenerator:
             instruction_examples.append((name, primary_example))
 
         with open(dump_file, "w") as f:
-            march = self._build_march_string(
-                "rv32i", group.extension, group.required_extensions
-            )
+            march = self._build_march_string("rv32i", group.extension, group.required_extensions)
             f.write(f"#as: -march={march}\n")
             f.write(f"#source: {source_file}\n")
             f.write("#objdump: -d -M no-aliases\n")
@@ -1254,9 +1203,7 @@ class GasTestGenerator:
 
             addr = 0
             for name, example in instruction_examples:
-                pattern = self._create_disasm_pattern(
-                    addr, name, example, no_aliases=True
-                )
+                pattern = self._create_disasm_pattern(addr, name, example, no_aliases=True)
                 f.write(f"{pattern}\n")
                 addr += self._get_instruction_size(name)
 
@@ -1276,13 +1223,9 @@ class GasTestGenerator:
                 continue
 
             mnemonic, operands = self._split_example_line(primary_example)
-            assembly_tokens = (
-                [token.strip() for token in assembly.split(",")] if assembly else []
-            )
+            assembly_tokens = [token.strip() for token in assembly.split(",")] if assembly else []
 
-            cases = self._create_standard_fail_cases(
-                mnemonic, operands, assembly_tokens
-            )
+            cases = self._create_standard_fail_cases(mnemonic, operands, assembly_tokens)
             if not cases:
                 continue
 
@@ -1481,14 +1424,10 @@ class GasTestGenerator:
 
         # Filter out 'i' and excluded privileged extensions
         extensions = {
-            ext
-            for ext in extensions
-            if ext and ext != "i" and ext not in excluded_march_extensions
+            ext for ext in extensions if ext and ext != "i" and ext not in excluded_march_extensions
         }
 
-        standard_parts = sorted(
-            ext for ext in extensions if ext in standard_exts and len(ext) == 1
-        )
+        standard_parts = sorted(ext for ext in extensions if ext in standard_exts and len(ext) == 1)
         non_standard_parts = sorted(
             ext for ext in extensions if ext not in standard_exts or len(ext) > 1
         )
@@ -1532,8 +1471,7 @@ class GasTestGenerator:
 
             if "," in operands_clean:
                 pieces = [
-                    _escape_with_whitespace(part.strip())
-                    for part in operands_clean.split(",")
+                    _escape_with_whitespace(part.strip()) for part in operands_clean.split(",")
                 ]
                 operands_pattern = r"\s*,\s*".join(pieces)
             else:
@@ -1577,9 +1515,7 @@ def parse_args():
     parser.add_argument(
         "--extensions", help="Comma-separated list of enabled extensions (default: all)"
     )
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose logging"
-    )
+    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
     parser.add_argument(
         "--include-all",
         "-a",
@@ -1601,9 +1537,7 @@ def main():
         include_all = True
         logging.info("Including all instructions")
     else:
-        enabled_extensions = [
-            ext.strip() for ext in args.extensions.split(",") if ext.strip()
-        ]
+        enabled_extensions = [ext.strip() for ext in args.extensions.split(",") if ext.strip()]
         include_all = False
         logging.info(f"Enabled extensions: {', '.join(enabled_extensions)}")
 
@@ -1612,15 +1546,11 @@ def main():
         sys.exit(1)
 
     if not os.path.isdir(args.csr_dir):
-        logging.warning(
-            f"CSR directory not found: {args.csr_dir}. Using fallback CSR list."
-        )
+        logging.warning(f"CSR directory not found: {args.csr_dir}. Using fallback CSR list.")
 
     generator = GasTestGenerator(args.output_dir, args.csr_dir, args.inst_dir)
 
-    instructions = generator.load_instructions(
-        args.inst_dir, enabled_extensions, include_all
-    )
+    instructions = generator.load_instructions(args.inst_dir, enabled_extensions, include_all)
 
     if not instructions:
         logging.error("No instructions found or all were filtered out.")

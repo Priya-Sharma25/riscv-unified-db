@@ -15,9 +15,7 @@ from pathlib import Path
 def parse_op_fields(riscv_h: str):
     """Parse OP_SH_* and OP_MASK_* into a field->bits map."""
     sh_re = re.compile(r"#define\s+OP_SH_([A-Z0-9_]+)\s+(\d+)")
-    mask_re = re.compile(
-        r"#define\s+OP_MASK_([A-Z0-9_]+)\s+((?:0x[0-9A-Fa-f]+|\d+)[Uu]?)"
-    )
+    mask_re = re.compile(r"#define\s+OP_MASK_([A-Z0-9_]+)\s+((?:0x[0-9A-Fa-f]+|\d+)[Uu]?)")
 
     shifts = {}
     masks = {}
@@ -78,9 +76,7 @@ def parse_encode_macros(riscv_h: str):
             src_start = int(sm.group(1))
             width = int(sm.group(2))
             dst_start = int(sm.group(3))
-            segs.append(
-                {"src_start": src_start, "width": width, "dst_start": dst_start}
-            )
+            segs.append({"src_start": src_start, "width": width, "dst_start": dst_start})
         if not segs:
             continue
         bits = []
@@ -179,9 +175,7 @@ def parse_operand_switch(lines, start_idx=0):
                 encodes.update(encode_any_re.findall(lines[j]))
                 j += 1
                 la += 1
-            entries.append(
-                (key, cmt, sorted(inserts), sorted(extracts), sorted(encodes))
-            )
+            entries.append((key, cmt, sorted(inserts), sorted(extracts), sorted(encodes)))
         i += 1
     return entries
 
@@ -283,9 +277,7 @@ def derive_bits_for_token(token, macro_use, fields_map, enc_map):
             bits.update(fields_map[fld]["bits"])
 
     if token == "0":
-        notes.append(
-            "constant-zero; bits reported when context provides an immediate encoder"
-        )
+        notes.append("constant-zero; bits reported when context provides an immediate encoder")
 
     return sorted(bits), notes
 
@@ -402,8 +394,7 @@ def main():
             for k, v in sorted(fields_map.items())
         },
         "encode_immediates": {
-            k: {"bits": v["bits"], "segments": v["segments"]}
-            for k, v in sorted(enc_map.items())
+            k: {"bits": v["bits"], "segments": v["segments"]} for k, v in sorted(enc_map.items())
         },
     }
 

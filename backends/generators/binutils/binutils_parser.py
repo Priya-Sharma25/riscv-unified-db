@@ -89,9 +89,7 @@ class BinutilsParser:
 
             # Convert to our operand info format
             for token, macro_use in op_token_map.items():
-                bits, _notes = derive_bits_for_token(
-                    token, macro_use, fields_map, enc_map
-                )
+                bits, _notes = derive_bits_for_token(token, macro_use, fields_map, enc_map)
                 if bits:
                     bit_start, bit_end = min(bits), max(bits)
                 else:
@@ -141,9 +139,9 @@ class BinutilsParser:
             return "immediate"
         elif token in [">", "<"]:
             return "shift"
-        elif (
-            token in ["P", "Q", "p", "q"] and "PRED" in str(macro_use)
-        ) or "SUCC" in str(macro_use):
+        elif (token in ["P", "Q", "p", "q"] and "PRED" in str(macro_use)) or "SUCC" in str(
+            macro_use
+        ):
             return "fence"
         elif token in ["E", "m"]:
             return "special"
@@ -194,7 +192,5 @@ class BinutilsParser:
                     matches.append(info)
 
         # Sort by how well the bit positions match
-        matches.sort(
-            key=lambda x: abs((x.bit_start + x.bit_end) - (bit_start + bit_end))
-        )
+        matches.sort(key=lambda x: abs((x.bit_start + x.bit_end) - (bit_start + bit_end)))
         return matches
