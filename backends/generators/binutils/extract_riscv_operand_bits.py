@@ -45,7 +45,7 @@ def _bit_ranges(bits):
 
 
 def _emit_markdown(out_obj, fp):
-    tokens = out_obj.get('tokens', {})
+    tokens = out_obj.get("tokens", {})
     fp.write("RISC-V Operand Bit Positions (from binutils)\n")
     fp.write("\n")
     fp.write("- Bit indices are instruction bit positions with LSB = 0.\n")
@@ -53,21 +53,21 @@ def _emit_markdown(out_obj, fp):
     fp.write("\n")
 
     def grp(tok):
-        if tok.startswith('C.'):
+        if tok.startswith("C."):
             return (1, tok)
-        if tok.startswith('V.'):
+        if tok.startswith("V."):
             return (2, tok)
-        if tok.startswith('X.') or tok.startswith('W.'):
+        if tok.startswith("X.") or tok.startswith("W."):
             return (3, tok)
         return (0, tok)
 
     for tok in sorted(tokens.keys(), key=grp):
         data = tokens[tok]
-        bits = data.get('bits', [])
+        bits = data.get("bits", [])
         ranges = _bit_ranges(bits)
-        fields = data.get('asm_inserts', [])
-        encs = data.get('asm_encodes', [])
-        exts = data.get('dis_extracts', [])
+        fields = data.get("asm_inserts", [])
+        encs = data.get("asm_encodes", [])
+        exts = data.get("dis_extracts", [])
         fp.write(f"- {tok}\n")
         fp.write(f"  - bits: {', '.join(ranges) if ranges else '(none)'}\n")
         if fields:
@@ -76,17 +76,24 @@ def _emit_markdown(out_obj, fp):
             fp.write(f"  - encodes: {', '.join(encs)}\n")
         if exts:
             fp.write(f"  - extracts: {', '.join(exts)}\n")
-        notes = data.get('notes') or []
+        notes = data.get("notes") or []
         if notes:
             fp.write(f"  - notes: {'; '.join(notes)}\n")
         fp.write("\n")
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Extract RISC-V operand bit positions from binutils sources")
-    ap.add_argument('--format', '-f', choices=['json', 'markdown', 'md', 'text'], default='json',
-                    help='Output format (default: json)')
-    ap.add_argument('--out', '-o', default='-', help='Output file path or - for stdout')
+    ap = argparse.ArgumentParser(
+        description="Extract RISC-V operand bit positions from binutils sources"
+    )
+    ap.add_argument(
+        "--format",
+        "-f",
+        choices=["json", "markdown", "md", "text"],
+        default="json",
+        help="Output format (default: json)",
+    )
+    ap.add_argument("--out", "-o", default="-", help="Output file path or - for stdout")
     args = ap.parse_args()
     if not (RISCV_H.exists() and ASM.exists() and DIS.exists()):
         print("error: missing binutils sources next to this script", file=sys.stderr)
@@ -104,46 +111,55 @@ def main():
     for token, macro_use in op_token_map.items():
         bits, notes = derive_bits_for_token(token, macro_use, fields_map, enc_map)
         results[token] = {
-            'bits': bits,
-            'asm_inserts': macro_use.get('asm', {}).get('inserts', []),
-            'asm_encodes': macro_use.get('asm', {}).get('encodes', []),
-            'dis_extracts': macro_use.get('dis', {}).get('extracts', []),
-            'notes': notes,
+            "bits": bits,
+            "asm_inserts": macro_use.get("asm", {}).get("inserts", []),
+            "asm_encodes": macro_use.get("asm", {}).get("encodes", []),
+            "dis_extracts": macro_use.get("dis", {}).get("extracts", []),
+            "notes": notes,
         }
 
     # Enrich with a simple dictionary of OP fields and ENCODE immediates for reference
     ref = {
-        'op_fields': {k: {'bits': v['bits'], 'shift': v['shift'], 'mask': v['mask'], 'width': v['width']}
-                       for k, v in sorted(fields_map.items())},
-        'encode_immediates': {k: {'bits': v['bits'], 'segments': v['segments']}
-                              for k, v in sorted(enc_map.items())},
+        "op_fields": {
+            k: {
+                "bits": v["bits"],
+                "shift": v["shift"],
+                "mask": v["mask"],
+                "width": v["width"],
+            }
+            for k, v in sorted(fields_map.items())
+        },
+        "encode_immediates": {
+            k: {"bits": v["bits"], "segments": v["segments"]}
+            for k, v in sorted(enc_map.items())
+        },
     }
 
     out = {
-        'tokens': results,
-        'reference': ref,
+        "tokens": results,
+        "reference": ref,
     }
 
     # Emit in the requested format
     out_path = args.out
     fmt = args.format
-    if out_path == '-':
+    if out_path == "-":
         fp = sys.stdout
         close_fp = False
     else:
-        fp = open(out_path, 'w', encoding='utf-8')
+        fp = open(out_path, "w", encoding="utf-8")
         close_fp = True
 
     try:
-        if fmt in ('markdown', 'md', 'text'):
+        if fmt in ("markdown", "md", "text"):
             _emit_markdown(out, fp)
         else:
             json.dump(out, fp, indent=2, sort_keys=False)
-            fp.write('\n')
+            fp.write("\n")
     finally:
         if close_fp:
             fp.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

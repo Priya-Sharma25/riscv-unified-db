@@ -7,7 +7,7 @@ This generator creates binutils-compatible opcode table entries from RISC-V UDB 
 The generator produces two files for every run:
 
 ### 1. Opcode Table (`.c` file)
-- **Format**: `{output_name}.c` 
+- **Format**: `{output_name}.c`
 - **Purpose**: Contains the `riscv_opcodes[]` array with instruction definitions
 - **Structure**: Each entry follows binutils format: `{name, xlen, insn_class, operands, MATCH, MASK, match_func, pinfo}`
 - **Example**: `{"add", 0, INSN_CLASS_I, "d,s,t", MATCH_ADD, MASK_ADD, match_opcode, 0}`
@@ -33,7 +33,7 @@ All instruction class mappings are centralized in `insn_class_config.py`:
 The `ExtensionMapper` class handles UDB `definedBy` specifications:
 
 - **Simple extensions**: Direct 1:1 mapping (e.g., `Zba` → `INSN_CLASS_ZBA`)
-- **Complex combinations**: 
+- **Complex combinations**:
   - `anyOf` → `*_OR_*` classes (e.g., `[Zbb, Zbkb]` → `INSN_CLASS_ZBB_OR_ZBKB`)
   - `allOf` → `*_AND_*` classes (e.g., `[Zcb, Zba]` → `INSN_CLASS_ZCB_AND_ZBA`)
 - **Custom extensions**: Auto-generates class names (e.g., `Zfoo` → `INSN_CLASS_ZFOO`)
@@ -107,7 +107,7 @@ python3 binutils_generator.py --extensions=I,MyCustomExt --output=custom.c
 ### Adding Generated Opcodes
 
 1. **Include header**: Add `#include "my_opcodes.h"` to your opcode file
-2. **Merge opcode arrays**: 
+2. **Merge opcode arrays**:
    - Option A: Replace existing `riscv_opcodes[]` in `opcodes/riscv-opc.c`
    - Option B: Create separate opcode table and modify binutils to use it
    - Option C: Append entries to existing table
