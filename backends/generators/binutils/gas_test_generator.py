@@ -340,7 +340,6 @@ class TestInstructionGroup:
         assembly: str | None = None,
         display_instruction: str | None = None,
     ) -> None:
-
         entry = self.error_cases.setdefault(
             instruction,
             {
@@ -1001,7 +1000,6 @@ class GasTestGenerator:
                 elif isinstance(first_item, dict) and "allOf" in first_item:
                     all_of_list = first_item["allOf"]
                     if all_of_list and len(all_of_list) > 0:
-
                         extensions = [
                             ext.lower() for ext in all_of_list if isinstance(ext, str)
                         ]
@@ -1266,7 +1264,6 @@ class GasTestGenerator:
         return sanitized
 
     def _generate_common_error_cases(self, group: TestInstructionGroup) -> None:
-
         group.error_cases = {}
 
         for name, info in group.instructions:

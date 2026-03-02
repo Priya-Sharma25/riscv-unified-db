@@ -495,12 +495,12 @@ const struct riscv_opcode riscv_opcodes[] = {
 
     header_file = output_file.replace(".c", ".h")
     support_file = "elfxx-riscv.c"
-    logging.info(f"Generated files:")
+    logging.info("Generated files:")
     logging.info(f"  Opcode table:    {output_file}")
     logging.info(f"  Header file:     {header_file}")
     if custom_class_extensions:
         logging.info(f"  Subset support:  {support_file}")
-    logging.info(f"Statistics:")
+    logging.info("Statistics:")
     logging.info(f"  Total instructions: {stats['total']}")
     logging.info(f"  Successfully processed: {stats['success']}")
     logging.info(f"  Non-defined operands: {stats['non_defined_operands']}")
@@ -564,7 +564,7 @@ def generate_subset_support(output_file, generator_comment, custom_class_extensi
         extension_def = custom_class_extensions[class_name]
         case_code = generate_subset_support_ext_case_from_udb(class_name, extension_def)
         content += case_code
-    content += f"""
+    content += """
 
 /* Instructions for integration:
  *
