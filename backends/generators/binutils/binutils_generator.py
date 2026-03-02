@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Binutils RISC-V Generator
 
@@ -6,22 +5,24 @@ Generates binutils-compatible opcode table entries from RISC-V UDB instruction d
 Follows the format used in binutils-gdb/opcodes/riscv-opc.c
 """
 
+import argparse
+import glob
+import logging
 import os
 import sys
-import argparse
-import logging
+
 import yaml
-import glob
 
 # Add parent directory to path to find generator.py
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from generator import parse_match, parse_extension_requirements
+import re
+
+from generator import parse_extension_requirements, parse_match
 from naming_config import (
     USER_DEFINED_INSN_NAMES,
     USER_DEFINED_OPERAND_PREFERENCES,
     is_user_defined_class,
 )
-import re
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:: %(message)s")
 

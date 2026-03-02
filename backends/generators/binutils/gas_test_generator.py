@@ -13,18 +13,18 @@ The generator automatically discovers extension patterns from the unified databa
 and generates tests that should integrate seamlessly with the existing gas test suite.
 """
 
-import os
-import sys
 import argparse
-import logging
-import yaml
 import glob
+import logging
+import os
 import re
+import sys
 from pathlib import Path
-from typing import Dict, List, Tuple, Set
+
+import yaml
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from generator import parse_extension_requirements, load_csrs
+from generator import load_csrs, parse_extension_requirements
 
 # Named constants for fallback 12-bit signed immediate range.
 # The 12-bit signed immediate range is from -2048 to 2047 (inclusive).
@@ -176,7 +176,7 @@ def sanitize_extension_name(name: str) -> str:
     return sanitized if sanitized else "unknown"
 
 
-def _normalize_extension_token(token: str) -> List[str]:
+def _normalize_extension_token(token: str) -> list[str]:
     token = (token or "").strip().lower()
     if not token:
         return []
@@ -199,8 +199,8 @@ def _normalize_extension_token(token: str) -> List[str]:
     return [token]
 
 
-def extract_extension_names(defined_by) -> Set[str]:
-    extensions: Set[str] = set()
+def extract_extension_names(defined_by) -> set[str]:
+    extensions: set[str] = set()
 
     if isinstance(defined_by, str):
         extensions.update(_normalize_extension_token(defined_by))
@@ -305,9 +305,9 @@ class TestInstructionGroup:
     def __init__(self, extension: str):
         self.extension = extension
         self.instructions = []
-        self.error_cases: Dict[str, dict] = {}
+        self.error_cases: dict[str, dict] = {}
         self.arch_specific = {"rv32": [], "rv64": []}
-        self.required_extensions: Set[str] = set()
+        self.required_extensions: set[str] = set()
 
     def add_instruction(self, name: str, info: dict):
         """Add an instruction to this group."""
@@ -429,7 +429,7 @@ class AssemblyExampleGenerator:
             )
             self.csr_examples = ["mstatus", "mtvec", "mscratch", "cycle", "time"]
 
-    def _load_all_instruction_data(self) -> Tuple[Dict[str, dict], Dict[str, dict]]:
+    def _load_all_instruction_data(self) -> tuple[dict[str, dict], dict[str, dict]]:
         instruction_data = {}
         instruction_constraints = {}
 
@@ -474,7 +474,7 @@ class AssemblyExampleGenerator:
         }
 
         all_extensions = set()
-        for name, data in self.all_instruction_data.items():
+        for _name, data in self.all_instruction_data.items():
             defined_by = data.get("definedBy")
             if defined_by:
                 if isinstance(defined_by, str):
@@ -531,7 +531,7 @@ class AssemblyExampleGenerator:
 
     def _get_operand_replacements(
         self, inst_name: str, assembly: str, variant_index: int
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Generate operand replacements based on instruction requirements"""
         i = variant_index
 
@@ -636,7 +636,7 @@ class AssemblyExampleGenerator:
             else (min_val + 1 if min_val + 1 <= max_val else max_val)
         )
 
-    def generate_examples(self, name: str, assembly: str) -> List[str]:
+    def generate_examples(self, name: str, assembly: str) -> list[str]:
         """Generate assembly examples using YAML assembly field as the authoritative source."""
         instruction_data = self.all_instruction_data.get(name, {})
         actual_assembly = instruction_data.get("assembly", assembly)
@@ -662,7 +662,7 @@ class AssemblyExampleGenerator:
 
         return examples
 
-    def _generate_variants(self, name: str, assembly: str) -> List[str]:
+    def _generate_variants(self, name: str, assembly: str) -> list[str]:
         """Generate multiple assembly variants using the YAML assembly field."""
         variants = []
 
@@ -711,8 +711,10 @@ class AssemblyExampleGenerator:
             for placeholder, value in replacements.items():
                 operand_found = any(
                     op.get("raw") == placeholder
-                    or op.get("type") in ["csr", "vector_mask"]
-                    and placeholder in ["csr", "vm"]
+                    or (
+                        op.get("type") in ["csr", "vector_mask"]
+                        and placeholder in ["csr", "vm"]
+                    )
                     for op in operands
                 )
 
@@ -745,7 +747,7 @@ class AssemblyExampleGenerator:
 
         return variants
 
-    def _parse_assembly_operands(self, assembly: str) -> List[Dict]:
+    def _parse_assembly_operands(self, assembly: str) -> list[dict]:
         """Parse assembly string to identify operand types."""
         operands = []
 
@@ -758,7 +760,7 @@ class AssemblyExampleGenerator:
             if "(" in part and ")" in part:
                 match = re.match(r"([^(]*)\(([^)]+)\)", part)
                 if match:
-                    offset, base = match.groups()
+                    _offset, base = match.groups()
                     base_reg = base.strip()
 
                     if base_reg == "sp":
@@ -927,9 +929,9 @@ class GasTestGenerator:
     def load_instructions(
         self,
         inst_dir: str,
-        enabled_extensions: List[str] = None,
+        enabled_extensions: list[str] | None = None,
         include_all: bool = False,
-    ) -> Dict[str, dict]:
+    ) -> dict[str, dict]:
         """Load instructions from the unified database using precomputed data"""
         if enabled_extensions is None:
             enabled_extensions = []
@@ -960,8 +962,8 @@ class GasTestGenerator:
         return filtered_instructions
 
     def group_instructions_by_extension(
-        self, instructions: Dict[str, dict]
-    ) -> Dict[str, TestInstructionGroup]:
+        self, instructions: dict[str, dict]
+    ) -> dict[str, TestInstructionGroup]:
         """Group instructions by their defining extension."""
         groups = {}
 
@@ -1056,7 +1058,7 @@ class GasTestGenerator:
         source_file = self.output_dir / f"{ext_name}.s"
         dump_file = self.output_dir / f"{ext_name}.d"
 
-        instruction_examples: List[Tuple[str, str, str]] = []
+        instruction_examples: list[tuple[str, str, str]] = []
         for name, info in main_instructions:
             assembly = info.get("assembly", "")
             examples = self.example_generator.generate_examples(name, assembly)
@@ -1068,7 +1070,7 @@ class GasTestGenerator:
         with open(source_file, "w") as f:
             f.write("target:\n")
 
-            for name, assembly, example in instruction_examples:
+            for _name, assembly, example in instruction_examples:
                 mnemonic, _ = self._split_example_line(example)
                 signature = assembly.strip() if assembly else "n/a"
                 f.write(
@@ -1113,7 +1115,7 @@ class GasTestGenerator:
         if not arch_instructions:
             return
 
-        instruction_examples: List[Tuple[str, str, str]] = []
+        instruction_examples: list[tuple[str, str, str]] = []
         for name, info in arch_instructions:
             assembly = info.get("assembly", "")
             examples = self.example_generator.generate_examples(name, assembly)
@@ -1125,7 +1127,7 @@ class GasTestGenerator:
         with open(source_file, "w") as f:
             f.write("target:\n")
 
-            for name, assembly, example in instruction_examples:
+            for _name, assembly, example in instruction_examples:
                 mnemonic, _ = self._split_example_line(example)
                 signature = assembly.strip() if assembly else "n/a"
                 f.write(
@@ -1227,7 +1229,7 @@ class GasTestGenerator:
             if base is None:
                 main_instructions.append((name, info))
 
-        instruction_examples: List[Tuple[str, str]] = []
+        instruction_examples: list[tuple[str, str]] = []
         for name, info in main_instructions:
             assembly = info.get("assembly", "")
             examples = self.example_generator.generate_examples(name, assembly)
@@ -1311,13 +1313,13 @@ class GasTestGenerator:
                 display_instruction=mnemonic,
             )
 
-    def _select_primary_example(self, examples: List[str]) -> str | None:
+    def _select_primary_example(self, examples: list[str]) -> str | None:
         for example in examples:
             if example and example.strip():
                 return example.strip()
         return None
 
-    def _split_example_line(self, example: str) -> Tuple[str, List[str]]:
+    def _split_example_line(self, example: str) -> tuple[str, list[str]]:
         stripped = example.strip()
         if "\t" in stripped:
             mnemonic, operand_str = stripped.split("\t", 1)
@@ -1329,7 +1331,7 @@ class GasTestGenerator:
         operands = [op.strip() for op in operand_str.split(",") if op.strip()]
         return mnemonic.strip(), operands
 
-    def _format_instruction_line(self, mnemonic: str, operands: List[str]) -> str:
+    def _format_instruction_line(self, mnemonic: str, operands: list[str]) -> str:
         if operands:
             return f"{mnemonic} {', '.join(operands)}"
         return mnemonic
@@ -1363,14 +1365,14 @@ class GasTestGenerator:
     def _create_standard_fail_cases(
         self,
         mnemonic: str,
-        operands: List[str],
-        assembly_tokens: List[str],
-    ) -> List[Dict[str, str]]:
-        cases: List[Dict[str, str]] = []
-        seen_lines: Set[str] = set()
+        operands: list[str],
+        assembly_tokens: list[str],
+    ) -> list[dict[str, str]]:
+        cases: list[dict[str, str]] = []
+        seen_lines: set[str] = set()
 
         def add_case(
-            reason: str, new_operands: List[str], *, custom_error: str | None = None
+            reason: str, new_operands: list[str], *, custom_error: str | None = None
         ) -> None:
             line = self._format_instruction_line(mnemonic, new_operands)
             if line in seen_lines:
@@ -1454,7 +1456,7 @@ class GasTestGenerator:
         return ext
 
     def _build_march_string(
-        self, base_arch: str, extension: str, extra_extensions: Set[str] | None = None
+        self, base_arch: str, extension: str, extra_extensions: set[str] | None = None
     ) -> str:
         classification = self.example_generator.extension_classification
         standard_exts = classification["standard"]
@@ -1468,7 +1470,7 @@ class GasTestGenerator:
             "xmock",  # Test/mock extension - not real
         }
 
-        extensions: Set[str] = set()
+        extensions: set[str] = set()
 
         for part in extension.lower().split("-"):
             extensions.update(_normalize_extension_token(part))
@@ -1541,7 +1543,7 @@ class GasTestGenerator:
 
         return pattern
 
-    def generate_all_tests(self, instructions: Dict[str, dict]) -> None:
+    def generate_all_tests(self, instructions: dict[str, dict]) -> None:
         groups = self.group_instructions_by_extension(instructions)
 
         logging.info(f"Generating tests for {len(groups)} instruction groups")

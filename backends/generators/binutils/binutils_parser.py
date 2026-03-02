@@ -8,19 +8,18 @@ Extractor helpers are sourced from extract_riscv_operand_bits.py to keep a
 single source of truth.
 """
 
-import os
 import logging
+import os
 from pathlib import Path
-from typing import Dict, List, Optional, NamedTuple
-
+from typing import NamedTuple
 
 # Reuse the proven extractor implementation in this directory.
 # We import its helpers instead of re-implementing parsing here.
 from extract_riscv_operand_bits import (
-    parse_op_fields,
-    parse_encode_macros,
-    extract_operand_mapping,
     derive_bits_for_token,
+    extract_operand_mapping,
+    parse_encode_macros,
+    parse_op_fields,
 )
 
 
@@ -41,7 +40,7 @@ class BinutilsParser:
 
     def __init__(self, binutils_path: str):
         self.binutils_path = binutils_path
-        self.operand_info: Dict[str, OperandInfo] = {}
+        self.operand_info: dict[str, OperandInfo] = {}
         self.parsed = False
         # Keep only operand_info; generator/Matcher don't need raw bit lists here
 
@@ -143,10 +142,8 @@ class BinutilsParser:
         elif token in [">", "<"]:
             return "shift"
         elif (
-            token in ["P", "Q", "p", "q"]
-            and "PRED" in str(macro_use)
-            or "SUCC" in str(macro_use)
-        ):
+            token in ["P", "Q", "p", "q"] and "PRED" in str(macro_use)
+        ) or "SUCC" in str(macro_use):
             return "fence"
         elif token in ["E", "m"]:
             return "special"
@@ -175,17 +172,17 @@ class BinutilsParser:
             return "unknown"
 
     # Interface methods for compatibility
-    def get_operand_info(self, char: str) -> Optional[OperandInfo]:
+    def get_operand_info(self, char: str) -> OperandInfo | None:
         """Get information about a specific operand character."""
         return self.operand_info.get(char)
 
-    def get_all_operands(self) -> Dict[str, OperandInfo]:
+    def get_all_operands(self) -> dict[str, OperandInfo]:
         """Get all parsed operand information."""
         return self.operand_info.copy()
 
     def find_matching_operands(
-        self, bit_start: int, bit_end: int, operand_type: str = None
-    ) -> List[OperandInfo]:
+        self, bit_start: int, bit_end: int, operand_type: str | None = None
+    ) -> list[OperandInfo]:
         """Find operand characters that match given bit positions and type."""
         matches = []
 

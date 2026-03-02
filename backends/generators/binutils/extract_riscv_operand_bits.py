@@ -1,16 +1,15 @@
-#!/usr/bin/env python3
 """
 Extract RISC-V operand tokens and bit positions (JSON/Markdown).
 
 Thin wrapper that reuses helpers in binutils_parser.py (single source of truth).
 """
 
-import json
 import argparse
-import sys
+import json
 import re
-from pathlib import Path
+import sys
 from collections import OrderedDict
+from pathlib import Path
 
 
 def parse_op_fields(riscv_h: str):
@@ -245,9 +244,7 @@ def derive_bits_for_token(token, macro_use, fields_map, enc_map):
                 bits.update(fields_map[ex]["bits"])
                 continue
             alias = None
-            if ex.endswith("_IMM"):
-                alias = ex.replace("EXTRACT_", "ENCODE_")
-            elif (
+            if ex.endswith("_IMM") or (
                 ex.startswith("RVV_V")
                 or ex.startswith("ZCB")
                 or ex.startswith("ZCM")
@@ -418,22 +415,19 @@ def main():
     # Emit in the requested format
     out_path = args.out
     fmt = args.format
-    if out_path == "-":
-        fp = sys.stdout
-        close_fp = False
-    else:
-        fp = open(out_path, "w", encoding="utf-8")
-        close_fp = True
 
-    try:
+    def _emit(fp):
         if fmt in ("markdown", "md", "text"):
             _emit_markdown(out, fp)
         else:
             json.dump(out, fp, indent=2, sort_keys=False)
             fp.write("\n")
-    finally:
-        if close_fp:
-            fp.close()
+
+    if out_path == "-":
+        _emit(sys.stdout)
+    else:
+        with open(out_path, "w", encoding="utf-8") as fp:
+            _emit(fp)
 
 
 if __name__ == "__main__":
