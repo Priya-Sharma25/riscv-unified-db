@@ -146,6 +146,23 @@ def qualify_anchors(text, base)
   text.gsub(ANCHOR_RE, "[#udb:doc:inst:#{base}:\\1]")
 end
 
+# Convert Antora-style extension xrefs to the riscv-isa-manual ext: macro.
+#
+# The generated adoc uses Antora cross-references for extensions:
+#   xref:exts:D.adoc#udb:doc:ext:D[D]
+#
+# riscv-isa-manual registers ext: as a custom inline macro (macros.rb).
+# AsciiDoc's scanner finds ext:D[D] embedded inside those xref targets and
+# errors with "macro ext:D[] does not accept arguments". Converting to the
+# native macro fixes the error and renders the extension name correctly.
+#
+#   xref:exts:D.adoc#udb:doc:ext:D[D]  →  ext:D[]
+EXT_XREF_RE = /xref:exts:[^.]+\.adoc#udb:doc:ext:[^\[]+\[([^\]]+)\]/
+
+def convert_ext_xrefs(text)
+  text.gsub(EXT_XREF_RE, 'ext:\1[]')
+end
+
 # ── Partition ─────────────────────────────────────────────────────────────────
 
 buckets = { unpriv_rv32: [], unpriv_rv64: [], priv_rv32: [], priv_rv64: [] }
@@ -156,11 +173,11 @@ sections.each do |sect|
   text       = sect.join
 
   if priv
-    buckets[:priv_rv32] << qualify_anchors(text, "rv32") if rv32
-    buckets[:priv_rv64] << qualify_anchors(text, "rv64") if rv64
+    buckets[:priv_rv32] << convert_ext_xrefs(qualify_anchors(text, "rv32")) if rv32
+    buckets[:priv_rv64] << convert_ext_xrefs(qualify_anchors(text, "rv64")) if rv64
   else
-    buckets[:unpriv_rv32] << qualify_anchors(text, "rv32") if rv32
-    buckets[:unpriv_rv64] << qualify_anchors(text, "rv64") if rv64
+    buckets[:unpriv_rv32] << convert_ext_xrefs(qualify_anchors(text, "rv32")) if rv32
+    buckets[:unpriv_rv64] << convert_ext_xrefs(qualify_anchors(text, "rv64")) if rv64
   end
 end
 
