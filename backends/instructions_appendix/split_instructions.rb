@@ -146,6 +146,15 @@ def qualify_anchors(text, base)
   text.gsub(ANCHOR_RE, "[#udb:doc:inst:#{base}:\\1]")
 end
 
+# Increment every heading level in a section body by one = sign so that
+# instruction headings (== name) are subordinate to the appendix title (== Title).
+#
+#   == add   →  === add
+#   === foo  →  ==== foo
+def increment_heading_levels(text)
+  text.gsub(/^(=+) /) { "#{$1}= " }
+end
+
 # Convert Antora-style extension xrefs to the riscv-isa-manual ext: macro.
 #
 # The generated adoc uses Antora cross-references for extensions:
@@ -173,11 +182,11 @@ sections.each do |sect|
   text       = sect.join
 
   if priv
-    buckets[:priv_rv32] << convert_ext_xrefs(qualify_anchors(text, "rv32")) if rv32
-    buckets[:priv_rv64] << convert_ext_xrefs(qualify_anchors(text, "rv64")) if rv64
+    buckets[:priv_rv32] << increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv32"))) if rv32
+    buckets[:priv_rv64] << increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv64"))) if rv64
   else
-    buckets[:unpriv_rv32] << convert_ext_xrefs(qualify_anchors(text, "rv32")) if rv32
-    buckets[:unpriv_rv64] << convert_ext_xrefs(qualify_anchors(text, "rv64")) if rv64
+    buckets[:unpriv_rv32] << increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv32"))) if rv32
+    buckets[:unpriv_rv64] << increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv64"))) if rv64
   end
 end
 
