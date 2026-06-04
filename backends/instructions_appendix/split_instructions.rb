@@ -131,7 +131,7 @@ end
 def titled_header(header, title)
   header
     .reject { |l| l.start_with?(":wavedrom:") }
-    .map    { |l| l.start_with?("= ") ? "= #{title}\n" : l }
+    .map    { |l| l.start_with?("= ") ? "== #{title}\n" : l }
     .join
 end
 
