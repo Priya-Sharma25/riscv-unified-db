@@ -155,6 +155,22 @@ def increment_heading_levels(text)
   text.gsub(/^(=+) /) { "#{$1}= " }
 end
 
+# Add an insn: alias anchor before each udb:doc:inst anchor so that the
+# riscv-isa-manual's insnlink: macro can cross-reference the appendix entry.
+#
+# insnlink:add[] targets #insn:add.  The display name is taken from the
+# === heading that immediately follows the anchor (preserving dots, e.g. lr.w),
+# which is what insnlink: uses (name.downcase, no sanitize).
+#
+#   [#udb:doc:inst:rv32:add]      [#insn:add]
+#   === add                   →   [#udb:doc:inst:rv32:add]
+#                                 === add
+def add_insn_alias(text)
+  text.gsub(/(\[#udb:doc:inst:rv(?:32|64):[^\]]+\]\n)(={3,} )(.+\n)/) do
+    "[#insn:#{$3.chomp.downcase}]\n#{$1}#{$2}#{$3}"
+  end
+end
+
 # Convert Antora-style extension xrefs to the riscv-isa-manual ext: macro.
 #
 # The generated adoc uses Antora cross-references for extensions:
@@ -182,11 +198,11 @@ sections.each do |sect|
   text       = sect.join
 
   if priv
-    buckets[:priv_rv32] << increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv32"))) if rv32
-    buckets[:priv_rv64] << increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv64"))) if rv64
+    buckets[:priv_rv32] << add_insn_alias(increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv32")))) if rv32
+    buckets[:priv_rv64] << add_insn_alias(increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv64")))) if rv64
   else
-    buckets[:unpriv_rv32] << increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv32"))) if rv32
-    buckets[:unpriv_rv64] << increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv64"))) if rv64
+    buckets[:unpriv_rv32] << add_insn_alias(increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv32")))) if rv32
+    buckets[:unpriv_rv64] << add_insn_alias(increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv64")))) if rv64
   end
 end
 
