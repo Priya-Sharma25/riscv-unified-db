@@ -135,17 +135,6 @@ def titled_header(header, title)
     .join
 end
 
-# Qualify a bare instruction anchor with a base prefix so that the same
-# instruction appearing in both RV32 and RV64 appendixes has a unique ID.
-#
-#   [#udb:doc:inst:add]      → [#udb:doc:inst:rv32:add]
-#   [#udb:doc:inst:rv32:add] → unchanged (already qualified)
-ANCHOR_RE = /\[#udb:doc:inst:(?!rv(?:32|64):)([^\]]+)\]/
-
-def qualify_anchors(text, base)
-  text.gsub(ANCHOR_RE, "[#udb:doc:inst:#{base}:\\1]")
-end
-
 # Increment every heading level in a section body by one = sign so that
 # instruction headings (== name) are subordinate to the appendix title (== Title).
 #
@@ -155,24 +144,18 @@ def increment_heading_levels(text)
   text.gsub(/^(=+) /) { "#{$1}= " }
 end
 
-# Add an insn: alias anchor for each instruction heading so that the
-# riscv-isa-manual's insnlink: macro can cross-reference the appendix entry.
+# Replace the udb:doc:inst: block anchor with a plain insn: anchor so that
+# the riscv-isa-manual's insnlink: macro can cross-reference the appendix.
 #
-# insnlink:add[] targets #insn:add.  AsciiDoc only attaches one block anchor
-# to a heading (last one wins), so we cannot stack [#insn:add] as a second
-# block anchor — it would silently drop the udb:doc:inst: anchor or vice versa.
-# Instead, embed a raw HTML anchor inline inside the heading title via a
-# passthrough so both IDs exist in the output:
+# The split files are only used in riscv-isa-manual, not in UDB, so the
+# udb:doc:inst: anchor scheme is unnecessary here.  insnlink:add[] targets
+# #insn:add; the display name from the === heading preserves dots (e.g. lr.w).
 #
-#   [#udb:doc:inst:rv32:add]
-#   === add
-#     →
-#   [#udb:doc:inst:rv32:add]
-#   === pass:[<a id="insn:add"></a>]add
-def add_insn_alias(text)
-  text.gsub(/(\[#udb:doc:inst:rv(?:32|64):[^\]]+\]\n)(={3,} )(.+\n)/) do
-    name = $3.chomp.downcase
-    "#{$1}#{$2}pass:[<a id=\"insn:#{name}\"></a>]#{$3}"
+#   [#udb:doc:inst:rv32:add]  →  [[insn:add]]
+#   === add                      === add
+def replace_udb_anchors(text)
+  text.gsub(/\[#udb:doc:inst:[^\]]+\]\n(={3,} )(.+\n)/) do
+    "[[insn:#{$2.chomp.downcase}]]\n#{$1}#{$2}"
   end
 end
 
@@ -203,11 +186,11 @@ sections.each do |sect|
   text       = sect.join
 
   if priv
-    buckets[:priv_rv32] << add_insn_alias(increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv32")))) if rv32
-    buckets[:priv_rv64] << add_insn_alias(increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv64")))) if rv64
+    buckets[:priv_rv32] << replace_udb_anchors(increment_heading_levels(convert_ext_xrefs(text))) if rv32
+    buckets[:priv_rv64] << replace_udb_anchors(increment_heading_levels(convert_ext_xrefs(text))) if rv64
   else
-    buckets[:unpriv_rv32] << add_insn_alias(increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv32")))) if rv32
-    buckets[:unpriv_rv64] << add_insn_alias(increment_heading_levels(convert_ext_xrefs(qualify_anchors(text, "rv64")))) if rv64
+    buckets[:unpriv_rv32] << replace_udb_anchors(increment_heading_levels(convert_ext_xrefs(text))) if rv32
+    buckets[:unpriv_rv64] << replace_udb_anchors(increment_heading_levels(convert_ext_xrefs(text))) if rv64
   end
 end
 
