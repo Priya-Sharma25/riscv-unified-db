@@ -242,7 +242,11 @@ buckets.each do |key, blocks|
   File.open(path, "w", encoding: "UTF-8") do |f|
     f.write(titled_header(header, TITLES[key]))
     blocks.each { |b| f.write(b) }
+    f.write("\n") # ensure single trailing newline
   end
+  # Rewrite via String to strip any trailing blank lines before the final newline
+  content = File.read(path, encoding: "UTF-8")
+  File.write(path, content.rstrip + "\n", encoding: "UTF-8")
   puts "  #{path}  (#{blocks.size} instructions)"
 end
 
