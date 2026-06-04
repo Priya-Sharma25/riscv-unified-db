@@ -155,19 +155,24 @@ def increment_heading_levels(text)
   text.gsub(/^(=+) /) { "#{$1}= " }
 end
 
-# Add an insn: alias anchor before each udb:doc:inst anchor so that the
+# Add an insn: alias anchor for each instruction heading so that the
 # riscv-isa-manual's insnlink: macro can cross-reference the appendix entry.
 #
-# insnlink:add[] targets #insn:add.  The display name is taken from the
-# === heading that immediately follows the anchor (preserving dots, e.g. lr.w),
-# which is what insnlink: uses (name.downcase, no sanitize).
+# insnlink:add[] targets #insn:add.  AsciiDoc only attaches one block anchor
+# to a heading (last one wins), so we cannot stack [#insn:add] as a second
+# block anchor — it would silently drop the udb:doc:inst: anchor or vice versa.
+# Instead, embed a raw HTML anchor inline inside the heading title via a
+# passthrough so both IDs exist in the output:
 #
-#   [#udb:doc:inst:rv32:add]      [#insn:add]
-#   === add                   →   [#udb:doc:inst:rv32:add]
-#                                 === add
+#   [#udb:doc:inst:rv32:add]
+#   === add
+#     →
+#   [#udb:doc:inst:rv32:add]
+#   === pass:[<a id="insn:add"></a>]add
 def add_insn_alias(text)
   text.gsub(/(\[#udb:doc:inst:rv(?:32|64):[^\]]+\]\n)(={3,} )(.+\n)/) do
-    "[#insn:#{$3.chomp.downcase}]\n#{$1}#{$2}#{$3}"
+    name = $3.chomp.downcase
+    "#{$1}#{$2}pass:[<a id=\"insn:#{name}\"></a>]#{$3}"
   end
 end
 
