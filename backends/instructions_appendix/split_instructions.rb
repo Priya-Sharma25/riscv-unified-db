@@ -26,6 +26,7 @@
 #               Default: same directory as INPUT
 
 require "fileutils"
+require "set"
 
 HELP = <<~HELP
   Usage: ruby split_instructions.rb [OPTIONS] [INPUT] [OUTPUT_DIR]
@@ -144,18 +145,33 @@ def increment_heading_levels(text)
   text.gsub(/^(=+) /) { "#{$1}= " }
 end
 
+# Returns the lowercase instruction name from a section's anchor/heading pair.
+def insn_name_from_section(sect)
+  idx = sect.find_index { |l| l.start_with?("[#udb:doc:inst:") }
+  return nil unless idx
+
+  heading = sect[idx + 1]
+  m = heading&.match(/^=+ (.+)/)
+  m ? m[1].strip.downcase : nil
+end
+
 # Replace the udb:doc:inst: block anchor with a plain insn: anchor so that
 # the riscv-isa-manual's insnlink: macro can cross-reference the appendix.
 #
-# The split files are only used in riscv-isa-manual, not in UDB, so the
-# udb:doc:inst: anchor scheme is unnecessary here.  insnlink:add[] targets
-# #insn:add; the display name from the === heading preserves dots (e.g. lr.w).
+# When skip_set is provided, instructions whose name is in that set get their
+# anchor stripped rather than replaced — this prevents duplicate-ID warnings
+# for instructions that appear in both the rv32 and rv64 split files.
 #
 #   [#udb:doc:inst:rv32:add]  →  [[insn:add]]
 #   === add                      === add
-def replace_udb_anchors(text)
+def replace_udb_anchors(text, skip_set = nil)
   text.gsub(/\[#udb:doc:inst:[^\]]+\]\n(={3,} )(.+\n)/) do
-    "[[insn:#{$2.chomp.downcase}]]\n#{$1}#{$2}"
+    name = $2.chomp.downcase
+    if skip_set&.include?(name)
+      "#{$1}#{$2}"
+    else
+      "[[insn:#{name}]]\n#{$1}#{$2}"
+    end
   end
 end
 
@@ -180,16 +196,34 @@ end
 
 buckets = { unpriv_rv32: [], unpriv_rv64: [], priv_rv32: [], priv_rv64: [] }
 
+# Pre-pass: collect instruction names that appear in each rv64 bucket so we
+# can suppress duplicate anchors in the corresponding rv32 file.  An instruction
+# valid in both bases must carry [[insn:name]] in exactly one included file;
+# we arbitrarily pick rv64 as the canonical home.
+rv64_unpriv_names = Set.new
+rv64_priv_names   = Set.new
+
+sections.each do |sect|
+  _rv32, rv64 = base_support(sect)
+  next unless rv64
+
+  name = insn_name_from_section(sect)
+  next unless name
+
+  privileged?(sect) ? rv64_priv_names.add(name) : rv64_unpriv_names.add(name)
+end
+
 sections.each do |sect|
   rv32, rv64 = base_support(sect)
   priv       = privileged?(sect)
   text       = sect.join
+  skip       = priv ? rv64_priv_names : rv64_unpriv_names
 
   if priv
-    buckets[:priv_rv32] << replace_udb_anchors(increment_heading_levels(convert_ext_xrefs(text))) if rv32
+    buckets[:priv_rv32] << replace_udb_anchors(increment_heading_levels(convert_ext_xrefs(text)), skip) if rv32
     buckets[:priv_rv64] << replace_udb_anchors(increment_heading_levels(convert_ext_xrefs(text))) if rv64
   else
-    buckets[:unpriv_rv32] << replace_udb_anchors(increment_heading_levels(convert_ext_xrefs(text))) if rv32
+    buckets[:unpriv_rv32] << replace_udb_anchors(increment_heading_levels(convert_ext_xrefs(text)), skip) if rv32
     buckets[:unpriv_rv64] << replace_udb_anchors(increment_heading_levels(convert_ext_xrefs(text))) if rv64
   end
 end
